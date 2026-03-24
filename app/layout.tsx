@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 import { JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import { LanguageProvider } from "@/lib/LanguageContext";
 import "./globals.css";
@@ -81,6 +83,8 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen flex flex-col">
         <LanguageProvider>{children}</LanguageProvider>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

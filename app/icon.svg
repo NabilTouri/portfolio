@@ -1,0 +1,14 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="32" height="32" fill="transparent"/>
+  <text 
+    x="50%" 
+    y="52%" 
+    dominant-baseline="central" 
+    text-anchor="middle" 
+    fill="#00D4AA" 
+    font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" 
+    font-size="21" 
+    font-weight="bold"
+    letter-spacing="-0.45"
+  >NT<tspan fill="#e8e8f0">.</tspan></text>
+</svg>  

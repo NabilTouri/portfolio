@@ -9,7 +9,7 @@ export default function Hero() {
   return (
     <section
       id="hero"
-      className="relative min-h-screen flex items-center justify-center px-6 pt-16 overflow-hidden"
+      className="relative min-h-[100svh] flex flex-col px-6 overflow-hidden"
     >
       {/* Decorative gradient orb */}
       <div className="absolute top-1/4 -left-32 w-96 h-96 bg-accent/10 rounded-full blur-[120px] pointer-events-none" />
@@ -19,7 +19,38 @@ export default function Hero() {
       <div className="absolute top-32 left-12 w-px h-32 bg-gradient-to-b from-transparent via-accent/30 to-transparent hidden lg:block" />
       <div className="absolute bottom-32 right-12 w-px h-32 bg-gradient-to-b from-transparent via-accent/30 to-transparent hidden lg:block" />
 
-      <div className="max-w-4xl mx-auto text-center">
+      {/* Main Content Centered */}
+      <div className="flex-1 flex flex-col items-center justify-center pt-24 pb-12 relative z-10 w-full">
+        <div className="max-w-4xl mx-auto text-center flex flex-col items-center">
+        {/* Profile Image */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="relative w-32 h-32 md:w-40 md:h-40 shrink-0 mb-8 rounded-full overflow-hidden border-[3px] border-surface ring-2 ring-accent/40 shadow-[0_0_40px_rgba(0,212,170,0.2)] bg-surface-light flex items-center justify-center"
+        >
+          {/* SVG Fallback nel caso l'immagine manchi */}
+          <svg
+            className="absolute w-12 h-12 text-muted/30"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+          </svg>
+
+          {/* TODO: Inserisci la tua immagine in public/images/profile.jpg o cambia src */}
+          <img
+            src="/images/profile.jpg"
+            alt="Nabil Touri"
+            className="relative z-10 w-full h-full object-cover"
+            onError={(e) => {
+              // Nasconde l'img rotta e lascia visibile il fallback SVG sotto
+              e.currentTarget.style.display = 'none';
+            }}
+          />
+        </motion.div>
+
         <motion.p
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -69,31 +100,32 @@ export default function Hero() {
           >
             {t.hero.cta1}
           </a>
-          {/* TODO: Replace # with actual CV download link */}
           <a
-            href="#"
+            href={process.env.NEXT_PUBLIC_CV_URL || '#'}
             className="inline-flex items-center justify-center px-8 py-3 rounded-lg border border-border text-foreground font-heading font-bold text-sm hover:border-accent/50 hover:text-accent transition-all duration-200"
           >
             {t.hero.cta2}
           </a>
         </motion.div>
       </div>
+      </div>
 
       {/* Scroll indicator */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.5, duration: 0.6 }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2"
-      >
+      <div className="w-full flex justify-center pb-8 relative z-10">
         <motion.div
-          animate={{ y: [0, 8, 0] }}
-          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-          className="w-5 h-8 rounded-full border-2 border-muted/40 flex items-start justify-center p-1.5"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.5, duration: 0.6 }}
         >
-          <div className="w-1 h-2 rounded-full bg-accent" />
+          <motion.div
+            animate={{ y: [0, 8, 0] }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+            className="w-5 h-8 rounded-full border-[2px] border-muted/40 flex items-start justify-center p-1.5"
+          >
+            <div className="w-1 h-2 rounded-full bg-accent" />
+          </motion.div>
         </motion.div>
-      </motion.div>
+      </div>
     </section>
   );
 }

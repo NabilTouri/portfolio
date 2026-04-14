@@ -30,7 +30,7 @@ export default function Contact() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-50px' }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          action="mailto:me@nabiltouri.dev"
+          action={`mailto:${process.env.NEXT_PUBLIC_EMAIL || 'me@nabiltouri.dev'}`}
           method="POST"
           encType="text/plain"
           className="space-y-6"
@@ -97,7 +97,7 @@ export default function Contact() {
           <div className="flex items-center gap-6">
             {/* GitHub */}
             <a
-              href="https://github.com/NabilTouri"
+              href={process.env.NEXT_PUBLIC_GITHUB || 'https://github.com/NabilTouri'}
               target="_blank"
               rel="noopener noreferrer"
               className="text-muted hover:text-accent transition-colors duration-200"
@@ -110,7 +110,7 @@ export default function Contact() {
 
             {/* LinkedIn */}
             <a
-              href="https://www.linkedin.com/in/nabil-touri-b461742b7/"
+              href={process.env.NEXT_PUBLIC_LINKEDIN || 'https://www.linkedin.com/in/nabil-touri-b461742b7/'}
               target="_blank"
               rel="noopener noreferrer"
               className="text-muted hover:text-accent transition-colors duration-200"
@@ -123,7 +123,7 @@ export default function Contact() {
 
             {/* Email */}
             <a
-              href="mailto:me@nabiltouri.dev"
+              href={`mailto:${process.env.NEXT_PUBLIC_EMAIL || 'me@nabiltouri.dev'}`}
               className="text-muted hover:text-accent transition-colors duration-200"
               aria-label="Email"
             >

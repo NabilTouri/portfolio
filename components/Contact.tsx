@@ -1,10 +1,46 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useState } from 'react';
 import { useLanguage } from '@/lib/LanguageContext';
+
+type Status = 'idle' | 'loading' | 'success' | 'error';
 
 export default function Contact() {
   const { t } = useLanguage();
+  const [status, setStatus] = useState<Status>('idle');
+  const [errorMsg, setErrorMsg] = useState('');
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setStatus('loading');
+
+    const form = e.currentTarget;
+    const data = {
+      name: (form.elements.namedItem('name') as HTMLInputElement).value,
+      email: (form.elements.namedItem('email') as HTMLInputElement).value,
+      message: (form.elements.namedItem('message') as HTMLTextAreaElement).value,
+    };
+
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (!res.ok) {
+        const body = await res.json();
+        throw new Error(body.error || 'Something went wrong');
+      }
+
+      setStatus('success');
+      form.reset();
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : 'Something went wrong');
+      setStatus('error');
+    }
+  }
 
   return (
     <section id="contact" className="py-24 px-6">
@@ -30,9 +66,7 @@ export default function Contact() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-50px' }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          action={`mailto:${process.env.NEXT_PUBLIC_EMAIL || 'me@nabiltouri.dev'}`}
-          method="POST"
-          encType="text/plain"
+          onSubmit={handleSubmit}
           className="space-y-6"
         >
           <div className="grid sm:grid-cols-2 gap-6">
@@ -47,6 +81,7 @@ export default function Contact() {
                 placeholder={t.contact.form.name}
                 className="w-full px-4 py-3 rounded-lg bg-surface border border-border text-foreground placeholder:text-muted/60 focus:border-accent/50 focus:outline-none transition-colors duration-200 font-body text-sm"
                 required
+                disabled={status === 'loading'}
               />
             </div>
             <div>
@@ -60,6 +95,7 @@ export default function Contact() {
                 placeholder={t.contact.form.email}
                 className="w-full px-4 py-3 rounded-lg bg-surface border border-border text-foreground placeholder:text-muted/60 focus:border-accent/50 focus:outline-none transition-colors duration-200 font-body text-sm"
                 required
+                disabled={status === 'loading'}
               />
             </div>
           </div>
@@ -74,14 +110,24 @@ export default function Contact() {
               placeholder={t.contact.form.message}
               className="w-full px-4 py-3 rounded-lg bg-surface border border-border text-foreground placeholder:text-muted/60 focus:border-accent/50 focus:outline-none transition-colors duration-200 font-body text-sm resize-none"
               required
+              disabled={status === 'loading'}
             />
           </div>
+
+          {status === 'success' && (
+            <p className="text-center text-sm text-accent">{t.contact.form.successMessage}</p>
+          )}
+          {status === 'error' && (
+            <p className="text-center text-sm text-red-400">{errorMsg}</p>
+          )}
+
           <div className="text-center">
             <button
               type="submit"
-              className="inline-flex items-center justify-center px-8 py-3 rounded-lg bg-accent text-background font-heading font-bold text-sm hover:bg-accent/90 transition-all duration-200 hover:shadow-[0_0_30px_rgba(0,212,170,0.3)]"
+              disabled={status === 'loading' || status === 'success'}
+              className="inline-flex items-center justify-center px-8 py-3 rounded-lg bg-accent text-background font-heading font-bold text-sm hover:bg-accent/90 transition-all duration-200 hover:shadow-[0_0_30px_rgba(0,212,170,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {t.contact.form.send}
+              {status === 'loading' ? t.contact.form.sending : t.contact.form.send}
             </button>
           </div>
         </motion.form>

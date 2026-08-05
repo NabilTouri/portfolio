@@ -20,7 +20,7 @@
 
 ## Indice
 
-1. [🔴 Blocker](#1--blocker)
+1. [🔴 Blocker & rischi di deploy](#1--blocker--rischi-di-deploy)
 2. [📦 Contenuti & Esternalizzazione](#2--contenuti--esternalizzazione)
 3. [🔒 Sicurezza](#3--sicurezza)
 4. [🧹 Qualità del codice](#4--qualità-del-codice)
@@ -29,9 +29,9 @@
 
 ---
 
-## 1. 🔴 Blocker
+## 1. 🔴 Blocker & rischi di deploy
 
-### B-01 · Il build fallisce senza `RESEND_API_KEY` — 🔴 P0 · `S`
+### B-01 · Il build dipende da `RESEND_API_KEY` — 🟡 P2 · `S`
 
 **Dove:** `app/api/contact/route.ts:4`
 
@@ -39,10 +39,9 @@
 const resend = new Resend(process.env.RESEND_API_KEY); // ← eseguito a module-scope
 ```
 
-Il client Resend viene istanziato quando il modulo viene caricato, non quando arriva
-la richiesta. Next.js carica la route durante la fase *"Collecting page data"* del
-build, quindi **senza la variabile d'ambiente il build va in errore e il deploy
-Vercel fallisce del tutto**:
+Il client Resend viene istanziato al **caricamento del modulo**, non all'arrivo della
+richiesta. Next.js carica la route durante la fase *"Collecting page data"* del build,
+quindi in un ambiente senza la variabile il build termina con:
 
 ```
 Error: Missing API key. Pass it to the constructor `new Resend("re_123")`
@@ -50,10 +49,26 @@ Error: Missing API key. Pass it to the constructor `new Resend("re_123")`
 Error: Failed to collect page data for /api/contact
 ```
 
-Verificato localmente: con `RESEND_API_KEY` impostata il build passa, senza fallisce.
+> ✅ **Non è un blocco per il deploy attuale.** Le variabili d'ambiente Vercel sono
+> disponibili **sia a build time che a runtime**, quindi con la chiave configurata nel
+> progetto il build passa regolarmente. Il fallimento sopra è stato riprodotto in un
+> ambiente locale privo della chiave: dimostra la fragilità del pattern, non un
+> problema del deploy in produzione.
 
-**Fix:** spostare l'istanziazione dentro l'handler `POST` (lazy init) e gestire la
-chiave mancante con un 503 invece di un crash:
+**Cosa verificare (unico rischio concreto):** su Vercel le variabili hanno uno **scope
+per environment** (Production / Preview / Development, con checkbox separate). Se
+`RESEND_API_KEY` è impostata solo su *Production*:
+
+- deploy di produzione al merge → ✅ funziona
+- **Preview deploy generato da ogni PR** → ❌ build fallito, check rosso sulla PR
+
+Controllare in *Settings → Environment Variables* che siano selezionati tutti gli
+ambienti in uso.
+
+**Fix (robustezza):** spostare l'istanziazione dentro l'handler `POST` (lazy init).
+Un segreto di runtime smette così di essere una dipendenza del *build*: chi clona il
+repo riesce a compilare, una CI non ha bisogno della chiave per fare `npm run build`,
+e una chiave mancante degrada il solo form (503) invece di far cadere l'intera build.
 
 ```ts
 export async function POST(request: Request) {
@@ -65,9 +80,6 @@ export async function POST(request: Request) {
   // ...
 }
 ```
-
-**Inoltre:** assicurarsi che `RESEND_API_KEY` sia impostata su Vercel
-(Settings → Environment Variables) per tutti gli environment (Production, Preview, Development).
 
 ---
 
@@ -223,7 +235,7 @@ Il progetto usa **5 variabili d'ambiente** sparse nel codice, nessuna documentat
 
 | Variabile | Usata in | Obbligatoria |
 |---|---|---|
-| `RESEND_API_KEY` | `app/api/contact/route.ts:4` | ✅ **sì** — senza, il build fallisce (B-01) |
+| `RESEND_API_KEY` | `app/api/contact/route.ts:4` | ✅ **sì** — serve anche a build time (B-01) |
 | `NEXT_PUBLIC_EMAIL` | `route.ts:5`, `Contact.tsx:172` | no (ha fallback) |
 | `NEXT_PUBLIC_GITHUB` | `Contact.tsx:146` | no (ha fallback) |
 | `NEXT_PUBLIC_LINKEDIN` | `Contact.tsx:159` | no (ha fallback) |
@@ -776,9 +788,10 @@ da tastiera continua a girare nel contenuto sottostante.
 Non esiste `.github/workflows/`. Nessun controllo automatico su lint, typecheck o
 build prima del merge.
 
-Il problema è **concreto, non teorico**: B-01 (build rotto senza env var) sarebbe stato
-intercettato da una CI che esegue `npm run build` sulla PR, invece di fallire su Vercel
-al momento del deploy.
+Il problema è **concreto, non teorico**: una CI che esegue `npm run build` sulla PR
+intercetterebbe regressioni prima del merge. Nota che oggi, per via di B-01, quella CI
+avrebbe bisogno di `RESEND_API_KEY` fra i secret di GitHub solo per riuscire a
+compilare — motivo in più per applicare il lazy init.
 
 Un workflow minimo (`npx tsc --noEmit` + `npx eslint .` + `npm run build`) sono ~20 righe.
 
@@ -799,7 +812,7 @@ comportamento corretto e non quello attuale.
 
 Prima del prossimo merge su `main`, verificare su Vercel:
 
-- [ ] `RESEND_API_KEY` impostata su **Production, Preview e Development** → **senza, il build fallisce** (B-01)
+- [ ] `RESEND_API_KEY` selezionata anche per l'ambiente **Preview**, non solo Production → altrimenti il build della PR fallisce (B-01)
 - [ ] Dominio verificato su Resend con SPF/DKIM (S-09)
 - [ ] `NEXT_PUBLIC_EMAIL` / `GITHUB` / `LINKEDIN` impostate o fallback confermati corretti
 - [ ] Dominio custom `nabiltouri.dev` collegato (è già hardcoded nei metadata OG)
@@ -815,23 +828,24 @@ Prima del prossimo merge su `main`, verificare su Vercel:
 
 | Priorità | Voci | Prime cose da fare |
 |---|---|---|
-| 🔴 **P0** | 3 | B-01 (build rotto) · B-02 (progetti EN/IT) · S-01 (rate limiting) |
+| 🔴 **P0** | 2 | B-02 (progetti EN/IT) · S-01 (rate limiting) |
 | 🟠 **P1** | 13 | Sicurezza form, contenuti mancanti, SEO/social |
-| 🟡 **P2** | 12 | Refactor, accessibilità, CI |
+| 🟡 **P2** | 13 | Refactor, accessibilità, CI, lazy init Resend |
 | 🔵 **P3** | 12 | Wow factor, rifiniture |
 
 ### Percorso consigliato
 
 **1️⃣ Sprint "non deve rompersi"** — *~2h*
-`B-01` → `I-03` → `S-01` → `S-02` → `S-09`
-Rende il deploy affidabile e il form non abusabile. **Prima di qualsiasi altra cosa.**
+`I-03` → `S-01` → `S-02` → `S-09`
+Rende il form non abusabile e verifica che le email vengano davvero consegnate.
+**Prima di qualsiasi altra cosa.**
 
 **2️⃣ Sprint "deve essere presentabile"** — *~3h*
 `B-02` → `C-05` → `C-04` → `C-02` → `Q-02` → `Q-03`
 Contenuti coerenti, anteprime social funzionanti, niente 404, lingua che non si resetta.
 
 **3️⃣ Sprint "deve essere solido"** — *~4h*
-`S-05` → `Q-01` → `Q-11` → `Q-12` → `I-01` → `C-06` → `C-07`
+`S-05` → `Q-01` → `B-01` → `Q-11` → `Q-12` → `I-01` → `C-06` → `C-07`
 Vulnerabilità chiuse, lint pulito, accessibilità, CI, documentazione.
 
 **4️⃣ Sprint "deve essere memorabile"** — *aperto*

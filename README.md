@@ -43,7 +43,6 @@ Edit the strings there and the entire site updates. The structure is `translatio
 
 Search for `// TODO:` in the codebase for items that need real data:
 
-- **CV download link** — `components/Hero.tsx`
 - **Project GitHub/demo URLs** — `lib/translations.ts`
 - **OG image** — place `og-image.png` (1200×630) in `public/images/` and uncomment in `app/layout.tsx`
 - **Profile photo** — add to `public/images/` if desired

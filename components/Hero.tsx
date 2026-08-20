@@ -101,7 +101,8 @@ export default function Hero() {
             {t.hero.cta1}
           </a>
           <a
-            href={process.env.NEXT_PUBLIC_CV_URL || '#'}
+            href="/files/CV_Nabil_Touri.pdf"
+            download
             className="inline-flex items-center justify-center px-8 py-3 rounded-lg border border-border text-foreground font-heading font-bold text-sm hover:border-accent/50 hover:text-accent transition-all duration-200"
           >
             {t.hero.cta2}
